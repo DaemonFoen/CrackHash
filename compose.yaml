@@ -1,0 +1,35 @@
+version: '3.0'
+
+services:
+  manager:
+    build:
+      context: manager
+      dockerfile: Dockerfile
+    container_name: manager
+    ports:
+      - "8080:8080"
+    networks:
+      - crackhash_network
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://manager:8080/actuator/health" ]
+      interval: 3s
+      timeout: 5s
+      retries: 3
+
+  worker:
+    build:
+      context: worker
+      dockerfile: Dockerfile
+    depends_on:
+      manager:
+        condition: service_healthy
+    deploy:
+      replicas: 4
+    networks:
+      - crackhash_network
+    environment:
+      - MANAGER_URL=manager:8080
+
+networks:
+  crackhash_network:
+    driver: bridge
